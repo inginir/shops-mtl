@@ -3,16 +3,17 @@ import React, { useRef, useEffect } from "react";
 import mapboxgl from "mapbox-gl";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import styles from "../styles/ShopsMap.module.css";
 
 // import "./App.css";
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoibW9uYWdnYXIiLCJhIjoiY2ttMnZkZmR0MDJzejJ2bXliNTd0aHZzcSJ9.CL2JLBLsh9KLTwYX6rDSaQ";
 
-const Popup = ({ children, title, router }) => {
+const Popup = ({ children, id, router }) => {
   const handleClick = e => {
     e.preventDefault();
-    router.push(`/shop?title=${title}`);
+    router.push(`/shop?id=${id}`);
   };
   return (
     <>
@@ -54,6 +55,7 @@ const ShopsMap = () => {
                     coordinates: [-73.57561, 45.50162],
                   },
                   properties: {
+                    id: "1",
                     title: "Wirkn",
                     description: "My future company! ;)",
                   },
@@ -65,6 +67,7 @@ const ShopsMap = () => {
                     coordinates: [-73.563, 45.512],
                   },
                   properties: {
+                    id: "2",
                     title: "Quartier des spectacles",
                     description:
                       "A cool place in montreal that hosts a lot of events",
@@ -113,7 +116,7 @@ const ShopsMap = () => {
         ReactDOM.render(
           <Popup
             children={feature.properties.description}
-            title={feature.properties.title}
+            id={feature.properties.id}
             router={router}
           />,
           popupNode
@@ -129,12 +132,10 @@ const ShopsMap = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <>
+    <div className={styles["map-container"]}>
+      <div className={styles["title"]}>Welcome to shops-mtl</div>
       <div id="my-map" style={{ height: 500, width: 500 }} />
-      <Link href="/about">
-        <a>About Us</a>
-      </Link>
-    </>
+    </div>
   );
 };
 

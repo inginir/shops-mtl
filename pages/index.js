@@ -1,65 +1,66 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import React, { useRef, useEffect, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import { useRouter } from "next/router";
+import styles from "../styles/ShopsMap.module.css";
+import static_coordinates from "../constants/static-coordinates.json";
+import {
+  useAddHotelPoints,
+  useAddMainPoint,
+  useShowDirections,
+  useSetupMap,
+} from "../helpers/map_helpers";
+import { main_coordinates, mapboxAccessToken } from "../constants/misc";
+import { fetchHotels } from "./api/hotelsApi";
 
-export default function Home() {
+mapboxgl.accessToken = mapboxAccessToken;
+
+const ShopsMap = () => {
+  const router = useRouter();
+  const popUpRef = useRef(new mapboxgl.Popup({ offset: 15 }));
+
+  const [map, setMap] = useState();
+  const [hotels, setHotels] = useState([]);
+  const [directions, setDirections] = useState(static_coordinates);
+  const [priceRange, setPriceRange] = useState([0, 300]);
+
+  useEffect(() => {
+    fetchHotels(main_coordinates, priceRange, setHotels);
+  }, []);
+
+  //MAP HOOKS
+  useSetupMap(setMap);
+  useAddMainPoint(map, popUpRef, router);
+  useAddHotelPoints(map, hotels, setDirections, router, popUpRef);
+  useShowDirections(map, directions);
+
+  const handleMinPriceChange = e => {
+    setPriceRange([e.target.value, priceRange[1]]);
+  };
+
+  const handleMaxPriceChange = e => {
+    setPriceRange([priceRange[0], e.target.value]);
+  };
+
+  const handlePriceFieldBlur = () => {
+    fetchHotels(main_coordinates, priceRange, setHotels);
+  };
+
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+    <div className={styles["map-container"]}>
+      <div className={styles["title"]}>Welcome to hotels-mtl</div>
+      <div id="my-map" style={{ height: 500, width: 500 }} />
+      <input
+        onChange={handleMinPriceChange}
+        onBlur={handlePriceFieldBlur}
+        value={priceRange[0]}
+      />
+      <input
+        onChange={handleMaxPriceChange}
+        onBlur={handlePriceFieldBlur}
+        value={priceRange[1]}
+      />
     </div>
-  )
-}
+  );
+};
+
+export default ShopsMap;

@@ -118,51 +118,41 @@ export const useAddHotelPoints = (map, hotels) => {
   }, [hotels]);
 };
 
-export const useShowDirections = (map, directions, showDirections) => {
+export const useShowDirections = (map, directions) => {
   useEffect(() => {
     if (map && map.loaded()) {
       if (map.getLayer("hover-route")) map.removeLayer("hover-route");
       if (map.getSource("hover-route")) map.removeSource("hover-route");
-      console.log("directions", directions);
-      if (showDirections) {
-        map.addSource("hover-route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: directions,
-            },
+
+      map.addSource("hover-route", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: directions,
           },
-        });
-        map.addLayer({
-          id: "hover-route",
-          type: "line",
-          source: "hover-route",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": "#0000FF",
-            "line-width": 4,
-          },
-        });
-      }
+        },
+      });
+      map.addLayer({
+        id: "hover-route",
+        type: "line",
+        source: "hover-route",
+        layout: {
+          "line-join": "round",
+          "line-cap": "round",
+        },
+        paint: {
+          "line-color": "#0000FF",
+          "line-width": 4,
+        },
+      });
     }
-  }, [directions, showDirections]);
+  }, [directions]);
 };
 
-export const changeCursorOnEnter = (
-  map,
-  directions,
-  setDirections,
-  showDirections,
-  setShowDirections,
-  router,
-  popUpRef
-) => {
+export const onHotlesHover = (map, setDirections, router, popUpRef) => {
   map.on("mouseenter", "hotels-circle", e => {
     const { lat, lng } = pathOr({}, ["lngLat"], e);
     fetchDirections([lng, lat], main_coordinates).then(res => {
@@ -171,11 +161,48 @@ export const changeCursorOnEnter = (
         res
       );
       setDirections(fetchedDirections);
-      setShowDirections(true);
     });
     if (e.features.length) {
       map.getCanvas().style.cursor = "pointer";
       //SHOW POPUP ON HOVER
+      const feature = e.features[0];
+      // create popup node
+      const popupNode = document.createElement("div");
+      ReactDOM.render(
+        <Popup
+          children={feature.properties.description}
+          id={feature.properties.id}
+          router={router}
+        />,
+        popupNode
+      );
+      // set popup on map
+      popUpRef.current
+        .setLngLat(feature.geometry.coordinates)
+        .setDOMContent(popupNode)
+        .addTo(map);
+    }
+    map.on("mouseleave", "hotels-circle", () => {
+      // setShowDirections(false);
+      setDirections([]);
+      map.getCanvas().style.cursor = "";
+    });
+  });
+};
+
+export const onMainPointHover = (map, popUpRef, router) => {
+  // change cursor to pointer when user hovers over a clickable feature
+  map.on("mouseenter", "main-point", e => {
+    if (e.features.length) {
+      map.getCanvas().style.cursor = "pointer";
+    }
+  });
+  // reset cursor to default when user is no longer hovering over a clickable feature
+  map.on("mouseleave", "main-point", () => {
+    map.getCanvas().style.cursor = "";
+  });
+  map.on("mouseenter", "main-point", e => {
+    if (e.features.length) {
       const feature = e.features[0];
       // create popup node
       const popupNode = document.createElement("div");

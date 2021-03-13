@@ -10,31 +10,21 @@ import {
   addHotels,
   useAddHotelPoints,
   useShowDirections,
+  changeCursorOnEnter,
 } from "../helpers/map_helpers";
 import axios from "axios";
 import { path, pathOr } from "ramda";
 import { bookingUrl } from "../constants/api-urls";
 import { main_coordinates } from "../constants/misc";
+import { fetchHotels } from "./api/hotelsApi";
 // import marker_image from "../public/marker-image.png";
 // import "./App.css";
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoibW9uYWdnYXIiLCJhIjoiY2ttMnZkZmR0MDJzejJ2bXliNTd0aHZzcSJ9.CL2JLBLsh9KLTwYX6rDSaQ";
 
-const Popup = ({ children, id, router }) => {
-  const handleClick = e => {
-    e.preventDefault();
-    router.push(`/shop?id=${id}`);
-  };
-  return (
-    <>
-      <div style={{ padding: "10px" }}>{children}</div>
-      <button onClick={handleClick}>Details</button>
-    </>
-  );
-};
-
 let map;
+
 const ShopsMap = () => {
   const router = useRouter();
   const popUpRef = useRef(new mapboxgl.Popup({ offset: 15 }));
@@ -42,36 +32,10 @@ const ShopsMap = () => {
   const [shops, setShops] = useState([]);
   const [directions, setDirections] = useState(static_coordinates);
   const [showDirections, setShowDirections] = useState(false);
-
-  const priceRange = [1, 100];
+  const [priceRange, setPriceRange] = useState([0, 300]);
 
   useEffect(() => {
-    axios
-      .get(bookingUrl, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Origin, Content-Type, X-Auth-Token",
-        },
-      })
-      .then(res => {
-        const shopsRaw = path(["data", "results"], res);
-        console.log("shopsRaw", shopsRaw);
-        const shopsReduced = shopsRaw.map(
-          ({
-            latLng,
-            hid,
-            data: { name, address } = {},
-            prices: { nightly = "" } = {},
-          }) => ({
-            hid,
-            name,
-            address,
-            price: Math.floor(nightly),
-            coordinates: latLng.reverse(),
-          })
-        );
-        setShops(shopsReduced);
-      });
+    fetchHotels(main_coordinates, priceRange, setShops);
   }, []);
 
   useEffect(() => {
@@ -92,10 +56,6 @@ const ShopsMap = () => {
           addMainPoint(map);
         }
       );
-      // const image = (
-      //   <img src="../public/marker-image.png" width="150" height="150" />
-      // );
-      // map.addImage("main-custom-marker", image);
     });
 
     // change cursor to pointer when user hovers over a clickable feature
@@ -106,43 +66,15 @@ const ShopsMap = () => {
     });
 
     // change cursor to pointer when user hovers over a clickable feature
-    map.on("mouseenter", "hotels-circle", e => {
-      // setDirections(!directions);
-      console.log("e", e);
-      const { lat, lng } = pathOr({}, ["lngLat"], e);
-      axios
-        .get(
-          `https://directions.stay22.com/route/v2/walking/${lng}, ${lat};${main_coordinates[0]}, ${main_coordinates[1]}?alternatives=false&steps=true&geometries=geojson&overview=full`
-        )
-        .then(res => {
-          const fetchedDirections = path(
-            ["data", "routes", "0", "geometry", "coordinates"],
-            res
-          );
-          setDirections(fetchedDirections);
-          setShowDirections(true);
-        });
-      if (e.features.length) {
-        map.getCanvas().style.cursor = "pointer";
-        //SHOW POPUP ON HOVER
-        const feature = e.features[0];
-        // create popup node
-        const popupNode = document.createElement("div");
-        ReactDOM.render(
-          <Popup
-            children={feature.properties.description}
-            id={feature.properties.id}
-            router={router}
-          />,
-          popupNode
-        );
-        // set popup on map
-        popUpRef.current
-          .setLngLat(feature.geometry.coordinates)
-          .setDOMContent(popupNode)
-          .addTo(map);
-      }
-    });
+    changeCursorOnEnter(
+      map,
+      directions,
+      setDirections,
+      showDirections,
+      setShowDirections,
+      router,
+      popUpRef
+    );
 
     // reset cursor to default when user is no longer hovering over a clickable feature
     map.on("mouseleave", "main-point", () => {
@@ -202,10 +134,33 @@ const ShopsMap = () => {
 
   useShowDirections(map, directions, showDirections);
 
+  const handleMinPriceChange = e => {
+    setPriceRange([e.target.value, priceRange[1]]);
+  };
+
+  const handleMaxPriceChange = e => {
+    setPriceRange([priceRange[0], e.target.value]);
+  };
+
+  const handlePriceFieldBlur = () => {
+    fetchHotels(main_coordinates, priceRange, setShops);
+  };
+
   return (
     <div className={styles["map-container"]}>
       <div className={styles["title"]}>Welcome to shops-mtl</div>
       <div id="my-map" style={{ height: 500, width: 500 }} />
+      <input
+        onChange={handleMinPriceChange}
+        onBlur={handlePriceFieldBlur}
+        value={priceRange[0]}
+      />
+      <input
+        onChange={handleMaxPriceChange}
+        onBlur={handlePriceFieldBlur}
+        value={priceRange[1]}
+      />
+      {/* <button onClick={}/> */}
     </div>
   );
 };

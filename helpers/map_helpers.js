@@ -1,4 +1,9 @@
+import ReactDOM from "react-dom";
+import { path, pathOr } from "ramda";
 import { useEffect } from "react";
+import { fetchDirections } from "../pages/api/hotelsApi";
+import Popup from "../components/Popup";
+import { main_coordinates } from "../constants/misc";
 
 export const addMainPoint = map => {
   map.addSource("main-point", {
@@ -62,42 +67,49 @@ export const addHotels = (map, hotels = []) => {
       },
     };
   });
-  map.addSource("hotels", {
-    type: "geojson",
-    data: {
-      type: "FeatureCollection",
-      features,
-    },
-  });
 
-  map.addLayer({
-    id: "hotels-circle",
-    type: "circle",
-    source: "hotels",
-    paint: {
-      "circle-color": "#e75480",
-      "circle-radius": 15,
-      "circle-opacity": 0.65,
-    },
-    layout: {},
-  });
-  // Add a symbol layer
-  map.addLayer({
-    id: "hotels-price",
-    type: "symbol",
-    source: "hotels",
-    layout: {
-      // "icon-image": "custom-marker",
-      // get the title name from the source's "title" property
-      "text-field": ["get", "price"],
-      "text-size": 10,
-      // "text-color": "#ff0",
-      "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-      "text-offset": [0, -0.65],
-      "text-anchor": "top",
-      // "icon-size": 0.05,
-    },
-  });
+  if (map && map.loaded()) {
+    if (map.getLayer("hotels-circle")) map.removeLayer("hotels-circle");
+    if (map.getLayer("hotels-price")) map.removeLayer("hotels-price");
+    if (map.getSource("hotels")) map.removeSource("hotels");
+
+    map.addSource("hotels", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features,
+      },
+    });
+
+    map.addLayer({
+      id: "hotels-circle",
+      type: "circle",
+      source: "hotels",
+      paint: {
+        "circle-color": "#e75480",
+        "circle-radius": 15,
+        "circle-opacity": 0.65,
+      },
+      layout: {},
+    });
+    // Add a symbol layer
+    map.addLayer({
+      id: "hotels-price",
+      type: "symbol",
+      source: "hotels",
+      layout: {
+        // "icon-image": "custom-marker",
+        // get the title name from the source's "title" property
+        "text-field": ["get", "price"],
+        "text-size": 10,
+        // "text-color": "#ff0",
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-offset": [0, -0.65],
+        "text-anchor": "top",
+        // "icon-size": 0.05,
+      },
+    });
+  }
 };
 
 export const useAddHotelPoints = (map, hotels) => {
@@ -140,4 +152,46 @@ export const useShowDirections = (map, directions, showDirections) => {
       }
     }
   }, [directions, showDirections]);
+};
+
+export const changeCursorOnEnter = (
+  map,
+  directions,
+  setDirections,
+  showDirections,
+  setShowDirections,
+  router,
+  popUpRef
+) => {
+  map.on("mouseenter", "hotels-circle", e => {
+    const { lat, lng } = pathOr({}, ["lngLat"], e);
+    fetchDirections([lng, lat], main_coordinates).then(res => {
+      const fetchedDirections = path(
+        ["data", "routes", "0", "geometry", "coordinates"],
+        res
+      );
+      setDirections(fetchedDirections);
+      setShowDirections(true);
+    });
+    if (e.features.length) {
+      map.getCanvas().style.cursor = "pointer";
+      //SHOW POPUP ON HOVER
+      const feature = e.features[0];
+      // create popup node
+      const popupNode = document.createElement("div");
+      ReactDOM.render(
+        <Popup
+          children={feature.properties.description}
+          id={feature.properties.id}
+          router={router}
+        />,
+        popupNode
+      );
+      // set popup on map
+      popUpRef.current
+        .setLngLat(feature.geometry.coordinates)
+        .setDOMContent(popupNode)
+        .addTo(map);
+    }
+  });
 };

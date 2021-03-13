@@ -5,10 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "gcp-build": "npm run build",
+    "start": "node server.js",
+    "deploy": "firebase deploy — only hosting"
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "firebase-admin": "^9.5.0",
     "google-maps-react": "2.0.6",
     "next": "10.0.8",
     "next-redux-wrapper": "^6.0.2",

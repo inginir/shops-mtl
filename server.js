@@ -23,40 +23,31 @@ app
       });
       const { lat = 45.4961, lng = -73.5693, max, min } = req.query;
       axios
-        .get("https://www.stay22.com/api/booking", {
+        .get("https://api.stay22.com/v2/booking", {
           httpsAgent: agent,
           params: {
-            min,
-            max,
-            width: 660,
-            height: 400,
-            adults: 1,
-            children: 0,
-            infants: 0,
-            guests: 1,
-            rooms: 1,
+            latitude: lat,
+            longitude: lng,
+            radius: 1000,
+            checkin: "2021-06-10",
+            checkout: "2021-06-12",
+            minprice: min,
+            maxprice: max,
+            language: "en",
             currency: "USD",
-            langshort: "en",
-            priceper: "nightly",
-            limit: 30,
-            lat,
-            lng,
-            nelat: lat - 0.01,
-            nelng: lng - 0.01,
-            swlat: lat + 0.01,
-            swlng: lng + 0.01,
-            zoom: 10,
-            isnear: true,
-            // showairbnbs: true,
-            // centerlat: lat + 0.00004,
-            // centerlng: lng + 0.00004,
+            rooms: 1,
+            limit: 20,
+            page: 1,
+            country: "CA",
           },
         })
         .then(response => {
           console.log("response", Object.keys(response));
           res.send(response.data);
         })
-        .catch(error => res.send(error));
+        .catch(error => {
+          res.send(error);
+        });
       //   return res.send("hey");
     });
 

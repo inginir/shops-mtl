@@ -21,16 +21,19 @@ export const fetchHotels = (origin, priceRange, setShops) => {
       const shopsRaw = path(["data", "results"], res);
       const shopsReduced = shopsRaw.map(
         ({
-          latLng,
-          hid,
-          data: { name, address } = {},
+          latitude,
+          longitude,
+          id,
+          address: { street } = {},
+          name,
+          min_rates: { per_night },
           prices: { nightly = "" } = {},
         }) => ({
-          hid,
+          id,
           name,
-          address,
-          price: Math.floor(nightly),
-          coordinates: latLng.reverse(),
+          address: street,
+          price: Math.floor(per_night),
+          coordinates: [longitude, latitude],
         })
       );
       setShops(shopsReduced);

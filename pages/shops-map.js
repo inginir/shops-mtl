@@ -7,7 +7,7 @@ import {
   addMainPoint,
   useAddHotelPoints,
   useShowDirections,
-  onHotlesHover,
+  onHotelsHover,
   onMainPointHover,
 } from "../helpers/map_helpers";
 import { main_coordinates } from "../constants/misc";
@@ -34,9 +34,8 @@ const ShopsMap = () => {
     map = new mapboxgl.Map({
       container: "my-map",
       style: "mapbox://styles/mapbox/streets-v11",
-      center: [-73.5693, 45.4961],
-      zoom: 14,
-      // pitch: 45,
+      center: main_coordinates,
+      zoom: 13.5,
     });
     map.on("load", () => {
       // add the data source for new a feature collection with no features
@@ -50,7 +49,7 @@ const ShopsMap = () => {
       );
     });
 
-    onHotlesHover(map, setDirections, router, popUpRef);
+    onHotelsHover(map, setDirections, router, popUpRef);
     onMainPointHover(map, popUpRef, router);
     return () => map.remove();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

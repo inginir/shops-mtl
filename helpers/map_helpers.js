@@ -15,7 +15,7 @@ export const addMainPoint = map => {
           type: "Feature",
           geometry: {
             type: "Point",
-            coordinates: [-73.5693, 45.4961],
+            coordinates: main_coordinates,
           },
           properties: {
             id: "1",
@@ -52,7 +52,7 @@ export const addMainPoint = map => {
 };
 
 export const addHotels = (map, hotels = []) => {
-  const features = hotels.map(({ hid, coordinates, name, price, address }) => {
+  const features = hotels.map(({ id, coordinates, name, price, address }) => {
     return {
       type: "Feature",
       geometry: {
@@ -60,7 +60,7 @@ export const addHotels = (map, hotels = []) => {
         coordinates,
       },
       properties: {
-        id: hid,
+        id,
         title: name,
         price: `$${price}`,
         description: address,
@@ -152,7 +152,7 @@ export const useShowDirections = (map, directions) => {
   }, [directions]);
 };
 
-export const onHotlesHover = (map, setDirections, router, popUpRef) => {
+export const onHotelsHover = (map, setDirections, router, popUpRef) => {
   map.on("mouseenter", "hotels-circle", e => {
     const { lat, lng } = pathOr({}, ["lngLat"], e);
     fetchDirections([lng, lat], main_coordinates).then(res => {
@@ -171,6 +171,7 @@ export const onHotlesHover = (map, setDirections, router, popUpRef) => {
       ReactDOM.render(
         <Popup
           children={feature.properties.description}
+          title={feature.properties.title}
           id={feature.properties.id}
           router={router}
         />,
@@ -208,6 +209,7 @@ export const onMainPointHover = (map, popUpRef, router) => {
       const popupNode = document.createElement("div");
       ReactDOM.render(
         <Popup
+          title={feature.properties.title}
           children={feature.properties.description}
           id={feature.properties.id}
           router={router}

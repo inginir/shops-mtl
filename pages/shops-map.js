@@ -4,11 +4,10 @@ import { useRouter } from "next/router";
 import styles from "../styles/ShopsMap.module.css";
 import static_coordinates from "../constants/static-coordinates.json";
 import {
-  addMainPoint,
   useAddHotelPoints,
+  useAddMainPoint,
   useShowDirections,
-  onHotelsHover,
-  onMainPointHover,
+  useSetupMap,
 } from "../helpers/map_helpers";
 import { main_coordinates } from "../constants/misc";
 import { fetchHotels } from "./api/hotelsApi";
@@ -16,45 +15,23 @@ import { fetchHotels } from "./api/hotelsApi";
 mapboxgl.accessToken =
   "pk.eyJ1IjoibW9uYWdnYXIiLCJhIjoiY2ttMnZkZmR0MDJzejJ2bXliNTd0aHZzcSJ9.CL2JLBLsh9KLTwYX6rDSaQ";
 
-let map;
-
 const ShopsMap = () => {
   const router = useRouter();
   const popUpRef = useRef(new mapboxgl.Popup({ offset: 15 }));
 
-  const [shops, setShops] = useState([]);
+  const [map, setMap] = useState();
+  const [hotels, setHotels] = useState([]);
   const [directions, setDirections] = useState(static_coordinates);
   const [priceRange, setPriceRange] = useState([0, 300]);
 
   useEffect(() => {
-    fetchHotels(main_coordinates, priceRange, setShops);
+    fetchHotels(main_coordinates, priceRange, setHotels);
   }, []);
 
-  useEffect(() => {
-    map = new mapboxgl.Map({
-      container: "my-map",
-      style: "mapbox://styles/mapbox/streets-v11",
-      center: main_coordinates,
-      zoom: 13.5,
-    });
-    map.on("load", () => {
-      // add the data source for new a feature collection with no features
-      map.loadImage(
-        "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png",
-        function (error, image) {
-          if (error) throw error;
-          map.addImage("custom-marker", image);
-          addMainPoint(map);
-        }
-      );
-    });
-
-    onHotelsHover(map, setDirections, router, popUpRef);
-    onMainPointHover(map, popUpRef, router);
-    return () => map.remove();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useAddHotelPoints(map, shops);
+  //MAP HOOKS
+  useSetupMap(setMap);
+  useAddMainPoint(map, popUpRef, router);
+  useAddHotelPoints(map, hotels, setDirections, router, popUpRef);
   useShowDirections(map, directions);
 
   const handleMinPriceChange = e => {
@@ -66,12 +43,12 @@ const ShopsMap = () => {
   };
 
   const handlePriceFieldBlur = () => {
-    fetchHotels(main_coordinates, priceRange, setShops);
+    fetchHotels(main_coordinates, priceRange, setHotels);
   };
 
   return (
     <div className={styles["map-container"]}>
-      <div className={styles["title"]}>Welcome to shops-mtl</div>
+      <div className={styles["title"]}>Welcome to hotels-mtl</div>
       <div id="my-map" style={{ height: 500, width: 500 }} />
       <input
         onChange={handleMinPriceChange}
@@ -83,7 +60,6 @@ const ShopsMap = () => {
         onBlur={handlePriceFieldBlur}
         value={priceRange[1]}
       />
-      {/* <button onClick={}/> */}
     </div>
   );
 };

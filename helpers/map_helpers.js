@@ -1,4 +1,5 @@
 import ReactDOM from "react-dom";
+import mapboxgl from "mapbox-gl";
 import { path, pathOr } from "ramda";
 import { useEffect } from "react";
 import { fetchDirections } from "../pages/api/hotelsApi";
@@ -6,48 +7,59 @@ import Popup from "../components/Popup";
 import { main_coordinates } from "../constants/misc";
 
 export const addMainPoint = map => {
-  map.addSource("main-point", {
-    type: "geojson",
-    data: {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: main_coordinates,
+  map.on("load", () => {
+    // add the data source for new a feature collection with no features
+    map.loadImage(
+      "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png",
+      function (error, image) {
+        if (error) throw error;
+        map.addImage("custom-marker", image);
+        map.addSource("main-point", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                geometry: {
+                  type: "Point",
+                  coordinates: main_coordinates,
+                },
+                properties: {
+                  id: "1",
+                  title: "Bell Center",
+                  description:
+                    "A cool place in montreal that hosts a lot of events",
+                },
+              },
+            ],
           },
-          properties: {
-            id: "1",
-            title: "Bell Center",
-            description: "A cool place in montreal that hosts a lot of events",
-          },
-        },
-      ],
-    },
-  });
+        });
 
-  // Add a symbol layer
-  map.addLayer({
-    id: "main-point",
-    type: "symbol",
-    source: "main-point",
-    // paint: {
-    //   "fill-color": "#00ffff",
-    // },
-    layout: {
-      "icon-image": "custom-marker",
-      // get the title name from the source's "title" property
-      "text-field": ["get", "title"],
-      "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-      "text-offset": [0, 1.25],
-      "text-anchor": "top",
-      "icon-size": 0.07,
-      "icon-allow-overlap": true,
-      "text-allow-overlap": true,
-      //   "icon-color": "yellow",
-      //   "icon-halo-color": "yellow",
-    },
+        // Add a symbol layer
+        map.addLayer({
+          id: "main-point",
+          type: "symbol",
+          source: "main-point",
+          // paint: {
+          //   "fill-color": "#00ffff",
+          // },
+          layout: {
+            "icon-image": "custom-marker",
+            // get the title name from the source's "title" property
+            "text-field": ["get", "title"],
+            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+            "text-offset": [0, 1.25],
+            "text-anchor": "top",
+            "icon-size": 0.07,
+            "icon-allow-overlap": true,
+            "text-allow-overlap": true,
+            //   "icon-color": "yellow",
+            //   "icon-halo-color": "yellow",
+          },
+        });
+      }
+    );
   });
 };
 
@@ -112,10 +124,28 @@ export const addHotels = (map, hotels = []) => {
   }
 };
 
-export const useAddHotelPoints = (map, hotels) => {
+export const useAddHotelPoints = (
+  map,
+  hotels,
+  setDirections,
+  router,
+  popUpRef
+) => {
   useEffect(() => {
-    map && addHotels(map, hotels);
-  }, [hotels]);
+    if (map) {
+      addHotels(map, hotels);
+      onHotelsHover(map, setDirections, router, popUpRef);
+    }
+  }, [hotels, map]);
+};
+
+export const useAddMainPoint = (map, popUpRef, router) => {
+  useEffect(() => {
+    if (map) {
+      addMainPoint(map);
+      onMainPointHover(map, popUpRef, router);
+    }
+  }, [map]);
 };
 
 export const useShowDirections = (map, directions) => {
@@ -149,7 +179,7 @@ export const useShowDirections = (map, directions) => {
         },
       });
     }
-  }, [directions]);
+  }, [directions, map]);
 };
 
 export const onHotelsHover = (map, setDirections, router, popUpRef) => {
@@ -223,4 +253,17 @@ export const onMainPointHover = (map, popUpRef, router) => {
         .addTo(map);
     }
   });
+};
+
+export const useSetupMap = setMap => {
+  useEffect(() => {
+    const map = new mapboxgl.Map({
+      container: "my-map",
+      style: "mapbox://styles/mapbox/streets-v11",
+      center: main_coordinates,
+      zoom: 13.5,
+    });
+    setMap(map);
+    return () => map.remove();
+  }, []);
 };

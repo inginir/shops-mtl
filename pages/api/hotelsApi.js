@@ -6,7 +6,7 @@ export const fetchDirections = (from, to) =>
     `https://directions.stay22.com/route/v2/walking/${from[0]}, ${from[1]};${to[0]}, ${to[1]}?alternatives=false&steps=true&geometries=geojson&overview=full`
   );
 
-export const fetchHotels = (origin, priceRange, setShops) => {
+export const fetchHotels = (origin, priceRange, setHotels) => {
   axios
     .get("http://localhost:8080/api/hotels", {
       // .get("/api/hotels", {
@@ -36,6 +36,6 @@ export const fetchHotels = (origin, priceRange, setShops) => {
           coordinates: [longitude, latitude],
         })
       );
-      setShops(shopsReduced);
+      setHotels(shopsReduced);
     });
 };

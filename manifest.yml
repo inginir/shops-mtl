@@ -1,3 +1,0 @@
-applications:
-  - name: shops-mtl
-    command: npm run build; node server.js;

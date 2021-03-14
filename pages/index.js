@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { useRouter } from "next/router";
 import styles from "../styles/ShopsMap.module.css";
-import static_coordinates from "../constants/static-coordinates.json";
 import {
   useAddHotelPoints,
   useAddMainPoint,
@@ -20,7 +19,7 @@ const ShopsMap = () => {
 
   const [map, setMap] = useState();
   const [hotels, setHotels] = useState([]);
-  const [directions, setDirections] = useState(static_coordinates);
+  const [directions, setDirections] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 300]);
 
   useEffect(() => {
@@ -45,20 +44,31 @@ const ShopsMap = () => {
     fetchHotels(main_coordinates, priceRange, setHotels);
   };
 
+  const handleRefreshHotels = () => {
+    fetchHotels(main_coordinates, priceRange, setHotels);
+  };
+
   return (
     <div className={styles["map-container"]}>
       <div className={styles["title"]}>Welcome to hotels-mtl</div>
       <div id="my-map" style={{ height: 500, width: 500 }} />
-      <input
-        onChange={handleMinPriceChange}
-        onBlur={handlePriceFieldBlur}
-        value={priceRange[0]}
-      />
-      <input
-        onChange={handleMaxPriceChange}
-        onBlur={handlePriceFieldBlur}
-        value={priceRange[1]}
-      />
+      <label>
+        Min Price&nbsp;
+        <input
+          onChange={handleMinPriceChange}
+          onBlur={handlePriceFieldBlur}
+          value={priceRange[0]}
+        />
+      </label>
+      <label>
+        Max Price&nbsp;
+        <input
+          onChange={handleMaxPriceChange}
+          onBlur={handlePriceFieldBlur}
+          value={priceRange[1]}
+        />
+      </label>
+      <button onClick={handleRefreshHotels}>Refresh hotels</button>
     </div>
   );
 };
